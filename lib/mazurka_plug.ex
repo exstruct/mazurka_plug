@@ -4,26 +4,12 @@ defmodule Mazurka.Plug do
     plug_init = Keyword.get(opts, :plug_init, true)
 
     quote do
-      if unquote(plug_init) do
-        @behaviour Plug
-
-        @doc false
-        def init(opts) when is_list(opts) do
-          opts
-          |> :maps.from_list()
-          |> init()
+      unquote(if plug_init do
+        quote do
+          @before_compile unquote(__MODULE__)
+          use Plug.Builder
         end
-        def init(opts) when is_map(opts) do
-          opts
-        end
-
-        @doc false
-        def call(conn, opts) do
-          action(conn, opts)
-        end
-
-        defoverridable [init: 1, call: 2]
-      end
+      end)
 
       @doc false
       def action(conn, opts) when is_list(opts) do
@@ -78,6 +64,15 @@ defmodule Mazurka.Plug do
   end
   defp format_path(sn, "/" <> _ = path) do
     "/" <> (Enum.join(sn, "/")) <> path
+  end
+
+  defmacro __before_compile__(_) do
+    quote do
+      if !Enum.member?(@plugs, {:action, [], true}) do
+        require Plug.Builder
+        Plug.Builder.plug :action
+      end
+    end
   end
 end
 
