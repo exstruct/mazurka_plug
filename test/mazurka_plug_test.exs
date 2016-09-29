@@ -50,13 +50,6 @@ defmodule MazurkaPlugTest do
     end
   end
 
-  test "missing param_key" do
-    assert_raise ArgumentError, fn ->
-      conn(:get, "/")
-      |> Resource.call(@opts)
-    end
-  end
-
   test "condition exception" do
     assert_raise Plug.Conn.WrapperError, fn ->
       conn(:get, "/")
@@ -91,7 +84,6 @@ defmodule MazurkaPlugTest do
   end
 
   defp put_params(conn, params) do
-    conn
-    |> put_private(:mazurka_params, params)
+    %{conn | params: params}
   end
 end

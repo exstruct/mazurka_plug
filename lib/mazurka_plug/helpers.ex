@@ -17,8 +17,33 @@ defmodule Mazurka.Plug.Helpers do
     |> Enum.to_list()
   end
 
+  def get_params(conn) do
+    %{params: params,
+      body_params: b_params,
+      query_params: q_params} = conn = Plug.Conn.fetch_query_params(conn)
+
+    b_params = case b_params do
+                 %Plug.Conn.Unfetched{} ->
+                   %{}
+                 _ ->
+                   b_params
+               end
+
+    input = Map.merge(q_params, b_params)
+    params = :maps.fold(fn(k, v, acc) ->
+      case Map.fetch(input, k) do
+        {:ok, ^v} ->
+          Map.delete(acc, k)
+        _ ->
+          acc
+      end
+    end, params, params)
+
+    {params, input, conn}
+  end
+
   ## TODO make the serializers configurable
-  def handle_body(conn, body, content_type) do
+  def handle_body(conn, body, {type, subtype, _params} = content_type) do
     body =
       case content_type do
         {"application", subtype, _} when subtype in ["json", "hyper+json"] ->
@@ -27,6 +52,7 @@ defmodule Mazurka.Plug.Helpers do
           body
       end
     %{conn | resp_body: body, state: :set}
+    |> Conn.put_resp_content_type(type <> "/" <> subtype)
   end
 
   def handle_transition(%{private: %{mazurka_transition: transition}, status: status} = conn) do

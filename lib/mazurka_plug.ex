@@ -4,7 +4,6 @@ defmodule Mazurka.Plug do
   defmacro __using__(opts) do
     router = opts[:router] || @missing_router
     router_key = opts[:router_key] || :mazurka_router
-    params_key = opts[:params_key] || :mazurka_params
 
     quote do
       @behaviour Plug
@@ -17,41 +16,34 @@ defmodule Mazurka.Plug do
       def init(opts) when is_map(opts) do
         opts =
           %{router: unquote(router),
-            router_key: unquote(router_key),
-            params_key: unquote(params_key)}
+            router_key: unquote(router_key)}
           |> Map.merge(opts)
 
         {%{router: router,
-           router_key: router_key,
-           params_key: params_key}, opts} =
-          Map.split(opts, [:router, :router_key, :params_key])
+           router_key: router_key}, opts} =
+          Map.split(opts, [:router, :router_key])
 
-        {router, router_key, params_key, opts}
+        {router, router_key, opts}
       end
 
-      def call(%{private: private} = conn, {unquote(@missing_router), router_key, params_key, opts}) do
+      def call(%{private: private} = conn, {unquote(@missing_router), router_key, opts}) do
         router = Map.get(private, router_key)
-        call(conn, {router, router_key, params_key, opts})
+        call(conn, {router, router_key, opts})
       end
-      def call(%{private: private} = conn, {router, router_key, params_key, opts}) do
+      def call(%{private: private} = conn, {router, router_key, opts}) do
         import Mazurka.Plug.Helpers
         accepts = get_accepts(conn)
-        case Map.fetch(private, params_key) do
-          {:ok, params} ->
-            %{params: input} = conn = Plug.Conn.fetch_query_params(conn)
+        {params, input, conn} = get_params(conn)
 
-            {body, content_type, conn} =
-              action(accepts, params, input, conn, router, opts)
+        {body, content_type, conn} =
+          action(accepts, params, input, conn, router, opts)
 
-            conn
-            |> handle_body(body, content_type)
-            |> handle_transition()
-            |> handle_invalidation()
-            |> handle_response()
-            |> send_resp()
-          _ ->
-            raise ArgumentError, message: "Missing Plug.Conn private field #{inspect(params_key)}"
-        end
+        conn
+        |> handle_body(body, content_type)
+        |> handle_transition()
+        |> handle_invalidation()
+        |> handle_response()
+        |> Plug.Conn.send_resp()
       rescue
         err in [Mazurka.UnacceptableContentTypeException,
                 Mazurka.ConditionException,
