@@ -1,39 +1,39 @@
 defmodule Mazurka.Plug do
-  @missing_router __MODULE__.UNDEFINED
-
   defmacro __using__(opts) do
-    router = opts[:router] || @missing_router
     router_key = opts[:router_key] || :mazurka_router
+    plug_init = Keyword.get(opts, :plug_init, true)
 
     quote do
-      @behaviour Plug
+      if unquote(plug_init) do
+        @behaviour Plug
 
-      def init(opts) when is_list(opts) do
-        opts
-        |> :maps.from_list()
-        |> init()
+        @doc false
+        def init(opts) when is_list(opts) do
+          opts
+          |> :maps.from_list()
+          |> init()
+        end
+        def init(opts) when is_map(opts) do
+          opts
+        end
+
+        @doc false
+        def call(conn, opts) do
+          action(conn, opts)
+        end
+
+        defoverridable [init: 1, call: 2]
       end
-      def init(opts) when is_map(opts) do
-        opts =
-          %{router: unquote(router),
-            router_key: unquote(router_key)}
-          |> Map.merge(opts)
 
-        {%{router: router,
-           router_key: router_key}, opts} =
-          Map.split(opts, [:router, :router_key])
-
-        {router, router_key, opts}
+      @doc false
+      def action(conn, opts) when is_list(opts) do
+        action(conn, :maps.from_list(opts))
       end
-
-      def call(%{private: private} = conn, {unquote(@missing_router), router_key, opts}) do
-        router = Map.get(private, router_key)
-        call(conn, {router, router_key, opts})
-      end
-      def call(%{private: private} = conn, {router, router_key, opts}) do
+      def action(%{private: private} = conn, opts) when is_map(opts) do
         import Mazurka.Plug.Helpers
         accepts = get_accepts(conn)
         {params, input, conn} = get_params(conn)
+        router = Map.get(private, unquote(router_key))
 
         {body, content_type, conn} =
           action(accepts, params, input, conn, router, opts)
@@ -50,11 +50,11 @@ defmodule Mazurka.Plug do
                 Mazurka.ValidationException,
                 Mazurka.MissingParametersException,
                 Mazurka.MissingRouterException] ->
-          %{conn: conn} = err
-          Plug.Conn.WrapperError.reraise(conn, :error, err)
+        %{conn: conn} = err
+        Plug.Conn.WrapperError.reraise(conn, :error, err)
       end
 
-      defoverridable [init: 1, call: 2]
+      defoverridable [action: 2]
     end
   end
 
