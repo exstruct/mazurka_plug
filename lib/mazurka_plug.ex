@@ -29,7 +29,6 @@ defmodule Mazurka.Plug do
         |> handle_transition()
         |> handle_invalidation()
         |> handle_response()
-        |> Plug.Conn.send_resp()
       rescue
         err in [Mazurka.UnacceptableContentTypeException,
                 Mazurka.ConditionException,
@@ -40,7 +39,11 @@ defmodule Mazurka.Plug do
         Plug.Conn.WrapperError.reraise(conn, :error, err)
       end
 
-      defoverridable [action: 2]
+      def send_resp(conn, _opts) do
+        Plug.Conn.send_resp(conn)
+      end
+
+      defoverridable [action: 2, send_resp: 2]
     end
   end
 
@@ -71,6 +74,11 @@ defmodule Mazurka.Plug do
       if !Enum.member?(@plugs, {:action, [], true}) do
         require Plug.Builder
         Plug.Builder.plug :action
+      end
+
+      if !Enum.member?(@plugs, {:send_resp, [], true}) do
+        require Plug.Builder
+        Plug.Builder.plug :send_resp
       end
     end
   end
