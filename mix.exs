@@ -17,7 +17,8 @@ defmodule Mazurka.Plug.Mixfile do
   end
 
   defp deps do
-    [{:mazurka, ">= 1.0.0"},
+    [{:fugue, ">= 0.1.0"},
+     {:mazurka, ">= 1.0.0"},
      {:plug, ">= 0.0.0"},
      {:poison, ">= 2.2.0"},
      {:ex_doc, ">= 0.0.0", only: :dev}]
