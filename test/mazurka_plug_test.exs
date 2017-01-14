@@ -24,18 +24,43 @@ defmodule MazurkaPlugTest do
         }
       end
     end
+
+    mediatype HTML do
+      action do
+        {"div", %{}, [
+          foo,
+          " ",
+          bar
+        ]}
+      end
+    end
   end
 
   @opts Resource.init([])
 
-  test "success" do
+  test "success json" do
     conn(:get, "/")
+    |> put_params(%{"foo" => "bar"})
+    |> Resource.call(@opts)
+  end
+
+  test "success input json" do
+    conn(:get, "/")
+    |> Map.put(:query_string, "bar=123")
+    |> put_params(%{"foo" => "456"})
+    |> Resource.call(@opts)
+  end
+
+  test "success html" do
+    conn(:get, "/")
+    |> put_req_header("accept", "text/html")
     |> put_params(%{"foo" => "bar"})
     |> Resource.call(@opts)
   end
 
   test "success input" do
     conn(:get, "/")
+    |> put_req_header("accept", "text/html")
     |> Map.put(:query_string, "bar=123")
     |> put_params(%{"foo" => "456"})
     |> Resource.call(@opts)
@@ -44,7 +69,7 @@ defmodule MazurkaPlugTest do
   test "unacceptable content type" do
     assert_raise Plug.Conn.WrapperError, fn ->
       conn(:get, "/")
-      |> put_req_header("accept", "text/html")
+      |> put_req_header("accept", "foo/bar")
       |> put_params(%{"foo" => "not_gunna_happen"})
       |> Resource.call(@opts)
     end

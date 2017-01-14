@@ -2,6 +2,7 @@ defmodule Mazurka.Plug do
   defmacro __using__(opts) do
     router_key = opts[:router_key] || :mazurka_router
     plug_init = Keyword.get(opts, :plug_init, true)
+    serialize = Keyword.get(opts, :serialize, &__MODULE__.serialize/2)
 
     quote do
       unquote(if plug_init do
@@ -25,7 +26,7 @@ defmodule Mazurka.Plug do
           action(accepts, params, input, conn, router, opts)
 
         conn
-        |> handle_body(body, content_type)
+        |> handle_body(body, content_type, unquote(serialize))
         |> handle_transition()
         |> handle_invalidation()
         |> handle_response()
@@ -45,6 +46,16 @@ defmodule Mazurka.Plug do
 
       defoverridable [action: 2, send_resp: 2]
     end
+  end
+
+  def serialize({"application", "json", _}, body) do
+    Poison.encode_to_iodata!(body)
+  end
+  def serialize({"text", "html", _}, body) when is_tuple(body) do
+    HTMLBuilder.encode_to_iodata!(body)
+  end
+  def serialize({"text", _, _}, body) do
+    body
   end
 
   def update_affordance(%{path: path} = affordance,

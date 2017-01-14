@@ -42,15 +42,8 @@ defmodule Mazurka.Plug.Helpers do
     {params, input, conn}
   end
 
-  ## TODO make the serializers configurable
-  def handle_body(conn, body, {type, subtype, _params} = content_type) do
-    body =
-      case content_type do
-        {"application", subtype, _} when subtype in ["json", "hyper+json"] ->
-          Poison.encode_to_iodata!(body)
-        {"text", _, _} ->
-          body
-      end
+  def handle_body(conn, body, {type, subtype, _} = content_type, serialize) do
+    body = serialize.(content_type, body)
     %{conn | resp_body: body, state: :set}
     |> Conn.put_resp_content_type(type <> "/" <> subtype)
   end
