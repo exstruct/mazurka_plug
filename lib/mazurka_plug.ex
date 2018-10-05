@@ -51,6 +51,9 @@ defmodule Mazurka.Plug do
   def serialize({"application", "json", _}, body) do
     Poison.encode_to_iodata!(body)
   end
+  def serialize({"application", "xml", _}, body) do
+    body
+  end
   def serialize({"text", "html", _}, body) when is_tuple(body) do
     HTMLBuilder.encode_to_iodata!(body)
   end
