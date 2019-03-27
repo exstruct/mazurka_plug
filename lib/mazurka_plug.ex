@@ -37,7 +37,7 @@ defmodule Mazurka.Plug do
                 Mazurka.MissingParametersException,
                 Mazurka.MissingRouterException] ->
         %{conn: conn} = err
-        Plug.Conn.WrapperError.reraise(conn, :error, err, System.stacktrace())
+        Plug.Conn.WrapperError.reraise(conn, :error, err)
       end
 
       def send_resp(conn, _opts) do
