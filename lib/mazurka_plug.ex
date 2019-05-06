@@ -57,7 +57,7 @@ defmodule Mazurka.Plug do
   def serialize({"text", "html", _}, body) when is_tuple(body) do
     HTMLBuilder.encode_to_iodata!(body)
   end
-  def serialize({"text", _, _}, body) do
+  def serialize(_, body) do
     body
   end
 
