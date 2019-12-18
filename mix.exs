@@ -14,17 +14,19 @@ defmodule Mazurka.Plug.Mixfile do
   end
 
   def application do
-    [applications: [:logger]]
+    [
+      applications: [:logger]
+    ]
   end
 
   defp deps do
     [
+      {:ex_doc, ">= 0.0.0", only: :dev},
       {:fugue, ">= 0.1.0"},
       {:html_builder, github: "simplecastapps/html_builder"},
       {:mazurka, github: "simplecastapps/mazurka"},
       {:plug, ">= 0.0.0"},
-      {:poison, ">= 2.2.0"},
-      {:ex_doc, ">= 0.0.0", only: :dev}
+      {:poison, ">= 2.2.0"}
     ]
   end
 end
