@@ -12,7 +12,6 @@ defmodule Mazurka.Plug do
         end
       end)
 
-      @doc false
       def action(conn, opts) when is_list(opts) do
         action(conn, :maps.from_list(opts))
       end
@@ -57,7 +56,7 @@ defmodule Mazurka.Plug do
   def serialize({"text", "html", _}, body) when is_tuple(body) do
     HTMLBuilder.encode_to_iodata!(body)
   end
-  def serialize({"text", _, _}, body) do
+  def serialize(_, body) do
     body
   end
 
